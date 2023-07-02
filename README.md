@@ -59,3 +59,8 @@ However, when there is an error (for that request), then the log level will be u
 - pass in correlation id to tie logs together
 - buffering logs before logging them can cause logs to be out-of-order. Store the original timestamp in another field, e.g. `event_time` to distinguish between the time the event happened, and the time of logging.
 - TBH, this can be accomplished by wrapping errors
+
+## References
+
+- https://yiblet.com/posts/ring-buffer-logging
+- https://tersesystems.com/blog/2019/07/28/triggering-diagnostic-logging-on-exception/
