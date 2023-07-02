@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"math/rand"
 	"os"
 	"runtime"
@@ -19,18 +20,19 @@ const (
 )
 
 func main() {
-	logger := NewBufferLogger()
-	defer logger.Flush()
-
 	ctx := context.Background()
 	ctx = WithRequestID(ctx)
-	ctx = WithLogger(ctx, logger)
 
+	// Logger is initialized per-request to control the level.
+	logger := NewBufferLogger(ctx)
+	defer logger.Flush()
+
+	ctx = WithLogger(ctx, logger)
 	Foo(ctx)
 }
 
 func Foo(ctx context.Context) {
-	DebugCtx(ctx, "foo", slog.String("msg", "foo"))
+	DebugCtx(ctx, "calling foo", slog.Group("user", slog.String("name", "John")))
 
 	Bar(ctx)
 }
@@ -44,18 +46,27 @@ func Bar(ctx context.Context) {
 }
 
 type BufferLogger struct {
+	w       io.Writer
+	reqID   string
 	records []slog.Record
 	level   slog.Level
 }
 
-func NewBufferLogger() *BufferLogger {
+func NewBufferLogger(ctx context.Context) *BufferLogger {
+	reqID, ok := RequestID(ctx)
+	if !ok {
+		reqID = xid.New().String()
+	}
+
 	return &BufferLogger{
+		reqID: reqID,
+		w:     os.Stdout,
 		level: slog.LevelInfo,
 	}
 }
 
 func (l *BufferLogger) Flush() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	logger := slog.New(slog.NewJSONHandler(l.w, &slog.HandlerOptions{
 		AddSource: true,
 		Level:     l.level, // Defaults to INFO.
 	}))
@@ -69,7 +80,10 @@ func (l *BufferLogger) Flush() {
 		}
 		// To prevent out-of-order of logs, set the time it is recorded as an
 		// attribute, and update the logging time.
-		r.AddAttrs(slog.Time("event_time", r.Time))
+		r.AddAttrs(
+			slog.Time("event_time", r.Time),
+			slog.String("req_id", l.reqID),
+		)
 		r.Time = time.Now()
 		h.Handle(ctx, r)
 	}
@@ -78,11 +92,6 @@ func (l *BufferLogger) Flush() {
 func (l *BufferLogger) log(ctx context.Context, level slog.Level, msg string, attrs ...slog.Attr) {
 	var pcs [1]uintptr
 	runtime.Callers(3, pcs[:]) // skip [Callers, log, and parent]
-
-	reqID, ok := RequestID(ctx)
-	if ok {
-		attrs = append(attrs, slog.String("req_id", reqID))
-	}
 
 	r := slog.NewRecord(time.Now(), level, msg, pcs[0])
 	r.AddAttrs(attrs...)
