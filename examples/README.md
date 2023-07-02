@@ -6,7 +6,7 @@ The idea is still the same as ring buffer logging. We only want to enable all le
 But instead of writing our own implementation, we just defer the log statement.
 
 When an error is encounted, we just flip the switch to toggle the log level.
-However, the order of the logs printed will be reversed.
+However, the order of the logs printed will be reversed (this may not be so important, because usually you can just reverse the sort order in your logs monitoring tools).
 
 
 ```bash
