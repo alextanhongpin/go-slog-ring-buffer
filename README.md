@@ -52,6 +52,87 @@ However, when there is an error (for that request), then the log level will be u
 }
 ```
 
+## Improvement
+
+- condense the `source` representation into one line
+- show paths relative to source project directory
+
+
+
+Without error:
+
+```bash
+➜  go-slog-ring-buffer git:(main) ✗ go run main.go | jq
+{
+  "time": "2023-07-02T21:07:36.062283+08:00",
+  "level": "INFO",
+  "src": "bar/bar.go:12 bar.Bar",
+  "msg": "calling Bar",
+  "event_time": "2023-07-02T21:07:36.062236+08:00",
+  "req_id": "cignd67ltaq6un5v0vtg"
+}
+{
+  "time": "2023-07-02T21:07:36.062616+08:00",
+  "level": "INFO",
+  "src": "bar/bar.go:15 bar.Bar",
+  "msg": "Bar called",
+  "event_time": "2023-07-02T21:07:36.062267+08:00",
+  "req_id": "cignd67ltaq6un5v0vtg"
+}
+```
+
+With error:
+
+```bash
+➜  go-slog-ring-buffer git:(main) ✗ go run main.go | jq
+{
+  "time": "2023-07-02T21:09:05.40141+08:00",
+  "level": "DEBUG",
+  "src": "main.go:28 main.Foo",
+  "msg": "calling Foo",
+  "user": {
+    "name": "John"
+  },
+  "event_time": "2023-07-02T21:09:05.401359+08:00",
+  "req_id": "cigndsfltaq74eikhs90"
+}
+{
+  "time": "2023-07-02T21:09:05.4017+08:00",
+  "level": "DEBUG",
+  "src": "main.go:29 main.Foo",
+  "msg": "Foo called",
+  "event_time": "2023-07-02T21:09:05.401367+08:00",
+  "req_id": "cigndsfltaq74eikhs90"
+}
+{
+  "time": "2023-07-02T21:09:05.401708+08:00",
+  "level": "INFO",
+  "src": "bar/bar.go:12 bar.Bar",
+  "msg": "calling Bar",
+  "event_time": "2023-07-02T21:09:05.401372+08:00",
+  "req_id": "cigndsfltaq74eikhs90"
+}
+{
+  "time": "2023-07-02T21:09:05.401715+08:00",
+  "level": "DEBUG",
+  "src": "bar/bar.go:13 bar.Bar",
+  "msg": "SELECT 1 + $1",
+  "args": {
+    "$1": 42
+  },
+  "event_time": "2023-07-02T21:09:05.401375+08:00",
+  "req_id": "cigndsfltaq74eikhs90"
+}
+{
+  "time": "2023-07-02T21:09:05.401724+08:00",
+  "level": "ERROR",
+  "src": "bar/bar.go:17 bar.Bar",
+  "msg": "failed to call Bar",
+  "event_time": "2023-07-02T21:09:05.401401+08:00",
+  "req_id": "cigndsfltaq74eikhs90"
+}
+```
+
 
 ## Thoughts
 
@@ -59,6 +140,9 @@ However, when there is an error (for that request), then the log level will be u
 - pass in correlation id to tie logs together
 - buffering logs before logging them can cause logs to be out-of-order. Store the original timestamp in another field, e.g. `event_time` to distinguish between the time the event happened, and the time of logging.
 - TBH, this can be accomplished by wrapping errors
+- what to log?
+  - the start of a step, with the input
+  - the end of the step, with the output and whether it is successful or failed
 
 ## References
 
