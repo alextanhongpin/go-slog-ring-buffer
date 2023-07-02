@@ -64,3 +64,4 @@ However, when there is an error (for that request), then the log level will be u
 
 - https://yiblet.com/posts/ring-buffer-logging
 - https://tersesystems.com/blog/2019/07/28/triggering-diagnostic-logging-on-exception/
+- https://www.komu.engineer/blogs/09/log-without-losing-context?utm_source=pocket_saves
